@@ -17,9 +17,9 @@ import tempfile
 import shutil
 
 
-
 # =============== variables =============== #
 re_include = re.compile(r"#include")
+re_wsp = re.compile(r"[\s\t]+")
 re_quote = re.compile(r"[\'\"]")
 re_comment = re.compile(r"^[\s\t]*;")
 re_empty = re.compile(r"^[\s\t]*\n$")
@@ -27,6 +27,8 @@ re_atomtypes = re.compile(r"\[ atomtypes \]")
 re_moleculetype = re.compile(r"\[ moleculetype \]")
 re_molecules = re.compile(r"\[ molecules \]")
 re_system = re.compile(r"\[ system \]")
+re_posres = re.compile(r"\[ position_restraints \]")
+re_posres_main = re.compile(r"([\s\t]+\d+){2}([\s\t]+\d+(?:\.\d+)?){3}")
 
 
 # =============== functions =============== #
@@ -92,6 +94,10 @@ def load_file(input_file, output_file, library):
 					# [ molecules ]
 					flag_read = 3
 
+				elif re_posres.search(line):
+					# [ position_restrains ]
+					flag_read = 5
+
 				elif flag_read == 1:
 					# [ atomtypes ] の処理 (atomtypes を追加する場合)
 					if re_empty.search(line):
@@ -105,7 +111,15 @@ def load_file(input_file, output_file, library):
 						for molecule in molecules:
 							obj_output.write(molecule)
 						molecules = []
+
+				elif flag_read == 5:
+					# [ position_restraints ] の処理 (拘束条件を変更する場合)
+					if not re_comment.search(line) and re_posres_main.search(line) and args.posres != None:
+						datas = re_wsp.split(line.strip())
+						line = "%5d %5d %5d %5d %5d\n" % (int(datas[0]), int(datas[1]), args.posres[0], args.posres[1], args.posres[2])
+
 				obj_output.write(line)
+
 
 		if flag_read == 1 and len(atomtypes) != 0:
 			# [ atomtypes ] の処理が未消化の場合
@@ -177,11 +191,12 @@ if __name__ == '__main__':
 	parser.add_argument("-l", dest = "library", metavar = "GMX_LIB_PATH", nargs = "+", default = "[\".\"]", help = "force field path (Default: current directory only)")
 	parser.add_argument("-b", dest = "basename", metavar = "prefix", help = "prefix for outputing file (Default: output filename)")
 	parser.add_argument("-a", dest = "add", metavar = "TOP", nargs = "*", default = [], help = "add other topology")
+	parser.add_argument("-r", dest = "posres", metavar = "VECTOR", nargs = 3, type = int, help = "Force constants for position restraints (kJ/mol nm^2)")
 	parser.add_argument("-O", dest = "flag_overwrite", action = "store_true", default = False, help = "overwrite forcibly")
 	args = parser.parse_args()
 
+	# ファイルやディレクトリの確認
 	basic.check_exist(args.top, 2)
-
 	for elem in args.library:
 		basic.check_exist(elem, 3)
 
@@ -208,8 +223,6 @@ if __name__ == '__main__':
 
 	atomtypes = []
 	molecules = []
-	others = []
-	other_index = 0
 	new_topol_paths = []
 	if len(args.add) != 0:
 		for new_topol in args.add:
