@@ -237,7 +237,6 @@ if __name__ == '__main__':
 				molecules[count] = "%-15s %5s\n" % (datas[0], datas[1])
 			count += 1
 
-	output = basename_output + ".top"
 	if args.flag_overwrite == False:
-		basic.check_overwrite(output)
-	load_file(args.top, output, args.library)
+		basic.check_overwrite(args.output)
+	load_file(args.top, args.output, args.library)
