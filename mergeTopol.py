@@ -192,7 +192,7 @@ if __name__ == '__main__':
 	parser.add_argument("-l", dest = "library", metavar = "GMX_LIB_PATH", nargs = "+", default = "[\".\"]", help = "force field path (Default: current directory only)")
 	parser.add_argument("-b", dest = "basename", metavar = "prefix", help = "prefix for outputing file (Default: output filename)")
 	parser.add_argument("-a", dest = "add", metavar = "TOP", nargs = "*", default = [], help = "add other topology")
-	parser.add_argument("-n", dest = "mol", metavar = "NUM", nargs = "*", default = [], help = "the number of added other topology (with -a)")
+	parser.add_argument("-n", dest = "mol", metavar = "NUM", nargs = "*", type = int, default = [], help = "the number of added other topology (with -a)")
 	parser.add_argument("-r", dest = "posres", metavar = "VECTOR", nargs = 3, type = int, help = "Force constants for position restraints (kJ/mol nm^2)")
 	parser.add_argument("-O", dest = "flag_overwrite", action = "store_true", default = False, help = "overwrite forcibly")
 	args = parser.parse_args()
@@ -239,7 +239,7 @@ if __name__ == '__main__':
 				data = molecules[count].strip()
 				datas = re_wsp.split(data)
 				datas[1] = args.mol[count]
-				molecules[count] = "%-15s %5s\n" % (datas[0], datas[1])
+				molecules[count] = "%-15s %5d\n" % (datas[0], datas[1])
 			count += 1
 
 	if args.flag_overwrite == False:
