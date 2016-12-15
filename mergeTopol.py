@@ -209,23 +209,7 @@ if __name__ == '__main__':
 		basename_output = args.basename
 	else:
 		# basename が指定されていない場合
-		basename_output = args.output
-		pos = 0
-		if "/" in basename_output:
-			try:
-				pos = basename_output.rindex("/")
-			except ValueError:
-				# 同じ階層のファイルの場合
-				pos = 0
-			basename_output = basename_output[pos + 1 : ]
-
-		if "." in basename_output:
-			# 拡張子前のドットがある場合
-			try:
-				pos = basename_output.rindex(".")
-			except ValueError:
-				pos = len(basename_output)
-			basename_output = basename_output[0 : pos]
+		basename_output, dummy = os.path.splitext(os.path.basename(args.output))
 
 	atomtypes = []
 	molecules = []
