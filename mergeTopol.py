@@ -60,6 +60,7 @@ def load_file(input_file, output_file, library):
 							if args.flag_overwrite == False:
 								basic.check_overwrite(new_path)
 							shutil.copyfile(lib_path, new_path)
+							sys.stderr.write(" * %s was created\n" % new_path)
 
 							tmp_library = library
 							if os.path.abspath(os.path.dirname(lib_path)) not in tmp_library:
@@ -209,17 +210,21 @@ if __name__ == '__main__':
 	else:
 		# basename が指定されていない場合
 		basename_output = args.output
-		try:
-			pos = basename_output.rindex("/")
-		except ValueError:
-			# 同じ階層のファイルの場合
-			pos = 0
-		basename_output = basename_output[pos + 1 : ]
+		pos = 0
+		if "/" in basename_output:
+			try:
+				pos = basename_output.rindex("/")
+			except ValueError:
+				# 同じ階層のファイルの場合
+				pos = 0
+			basename_output = basename_output[pos + 1 : ]
 
-		try:
-			pos = basename_output.rindex("\.")
-		except ValueError:
+		if "." in basename_output:
 			# 拡張子前のドットがある場合
+			try:
+				pos = basename_output.rindex(".")
+			except ValueError:
+				pos = len(basename_output)
 			basename_output = basename_output[0 : pos]
 
 	atomtypes = []
