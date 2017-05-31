@@ -60,7 +60,7 @@ def load_file(input_file, output_file, library):
 							if args.flag_overwrite == False:
 								basic.check_overwrite(new_path)
 							shutil.copyfile(lib_path, new_path)
-							sys.stderr.write(" * %s was created\n" % new_path)
+							sys.stderr.write(" * {0} was created\n".format(new_path))
 
 							tmp_library = library
 							if os.path.abspath(os.path.dirname(lib_path)) not in tmp_library:
@@ -71,11 +71,11 @@ def load_file(input_file, output_file, library):
 							load_file(lib_path, new_path, tmp_library)
 
 							flag_found = 1
-							obj_output.write("#include \"%s\"\n" % new_path)
+							obj_output.write("#include \"{0}\"\n".format(new_path))
 							break
 
 					if flag_found == 0:
-						sys.stderr.write("ERROR: library not found (%s)\n" % path)
+						sys.stderr.write("ERROR: library not found ({0})\n".format(path))
 						sys.exit(1)
 					continue
 
@@ -87,7 +87,7 @@ def load_file(input_file, output_file, library):
 					# [ system ] (トポロジーを追加する場合)
 					for new_topol in new_topol_paths:
 						obj_output.write("; Include topology for new molecules added by mergeTopol.py\n")
-						obj_output.write("#include \"%s\"\n" % new_topol)
+						obj_output.write("#include \"{0}\"\n".format(new_topol))
 					obj_output.write("\n")
 					new_topol_paths = []
 
@@ -117,7 +117,7 @@ def load_file(input_file, output_file, library):
 					# [ position_restraints ] の処理 (拘束条件を変更する場合)
 					if not re_comment.search(line) and re_posres_main.search(line) and args.posres != None:
 						datas = re_wsp.split(line.strip())
-						line = "%5d %5d %5d %5d %5d\n" % (int(datas[0]), int(datas[1]), args.posres[0], args.posres[1], args.posres[2])
+						line = "{0:>5} {1:>5} {2:>5} {3:>5} {4:>5}\n".format(int(datas[0]), int(datas[1]), args.posres[0], args.posres[1], args.posres[2])
 
 				obj_output.write(line)
 
@@ -182,6 +182,7 @@ def load_new_topol(input_file):
 		basic.check_overwrite(output_file)
 	shutil.move(tempfile_name, output_file)
 	new_topol_paths.append(output_file)
+	sys.stderr.write("{0} was created.\n".format(output_file))
 
 
 # =============== main =============== #
@@ -223,7 +224,7 @@ if __name__ == '__main__':
 				data = molecules[count].strip()
 				datas = re_wsp.split(data)
 				datas[1] = args.mol[count]
-				molecules[count] = "%-15s %5d\n" % (datas[0], datas[1])
+				molecules[count] = "{0:<15} {1:>5}\n".format(datas[0], datas[1])
 			count += 1
 
 	if args.flag_overwrite == False:
