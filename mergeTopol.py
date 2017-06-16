@@ -191,8 +191,8 @@ class TopologyParameter:
 		for line in parameters1:
 			if re_directive.search(line):
 				# directive の場合
-				directive = re_directive.search(line).group(1)
-				directives1.append(directive)
+				directive = line
+				directives1.append(line)
 				parameter_values1[directive] = []
 			else:
 				parameter_values1[directive].append(line)
@@ -200,8 +200,8 @@ class TopologyParameter:
 		for line in parameters2:
 			if re_directive.search(line):
 				# directive の場合
-				directive = re_directive.search(line).group(1)
-				directives2.append(directive)
+				directive = line
+				directives2.append(line)
 				parameter_values2[directive] = []
 			else:
 				parameter_values2[directive].append(line)
@@ -235,7 +235,7 @@ class TopologyParameter:
 		# value のマージ
 		results = []
 		for directive in directives1:
-			results.append("[ {0} ]\n".format(directive))
+			results.append(directive)
 			if directive in parameter_values1.keys():
 				if parameter_values1[directive][-1] in ["", "\n"]:
 					# 末尾に空行がある場合
