@@ -404,10 +404,14 @@ def clean_lines(lines):
 
 	if flag_comment == False:
 		idx_end = len(results)
-	if results[-1] == "":
-		idx_end = -1
 
-	return results[idx_first : idx_end]
+	if len(results) == 0:
+		return results
+	else:
+		if results[-1] == "":
+			idx_end = -1
+
+		return results[idx_first : idx_end]
 
 
 # =============== main =============== #
