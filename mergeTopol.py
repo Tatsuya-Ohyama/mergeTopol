@@ -13,9 +13,6 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 import argparse
 from py_module_basic import basic
-import tempfile
-import shutil
-
 
 # =============== variables =============== #
 re_include = re.compile(r"#include")
@@ -43,9 +40,6 @@ class TopologyParameter:
 
 		# ファイル読み込み
 		lines = self.__load_data(input_file)
-		with open("temp", "w") as obj_output:
-			for line in lines:
-				obj_output.write(line)
 		self.__parse_topology(lines)
 
 
@@ -191,8 +185,8 @@ class TopologyParameter:
 		for line in parameters1:
 			if re_directive.search(line):
 				# directive の場合
-				directive = re_directive.search(line).group(1)
-				directives1.append(directive)
+				directive = line
+				directives1.append(line)
 				parameter_values1[directive] = []
 			else:
 				parameter_values1[directive].append(line)
@@ -200,8 +194,8 @@ class TopologyParameter:
 		for line in parameters2:
 			if re_directive.search(line):
 				# directive の場合
-				directive = re_directive.search(line).group(1)
-				directives2.append(directive)
+				directive = line
+				directives2.append(line)
 				parameter_values2[directive] = []
 			else:
 				parameter_values2[directive].append(line)
@@ -235,7 +229,7 @@ class TopologyParameter:
 		# value のマージ
 		results = []
 		for directive in directives1:
-			results.append("[ {0} ]\n".format(directive))
+			results.append(directive)
 			if directive in parameter_values1.keys():
 				if parameter_values1[directive][-1] in ["", "\n"]:
 					# 末尾に空行がある場合
@@ -410,10 +404,14 @@ def clean_lines(lines):
 
 	if flag_comment == False:
 		idx_end = len(results)
-	if results[-1] == "":
-		idx_end = -1
 
-	return results[idx_first : idx_end]
+	if len(results) == 0:
+		return results
+	else:
+		if results[-1] == "":
+			idx_end = -1
+
+		return results[idx_first : idx_end]
 
 
 # =============== main =============== #
