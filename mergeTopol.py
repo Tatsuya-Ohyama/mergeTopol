@@ -13,9 +13,6 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 import argparse
 from py_module_basic import basic
-import tempfile
-import shutil
-
 
 # =============== variables =============== #
 re_include = re.compile(r"#include")
@@ -43,9 +40,6 @@ class TopologyParameter:
 
 		# ファイル読み込み
 		lines = self.__load_data(input_file)
-		with open("temp", "w") as obj_output:
-			for line in lines:
-				obj_output.write(line)
 		self.__parse_topology(lines)
 
 
