@@ -304,7 +304,7 @@ class TopologyParameter:
 
 			obj_output_top.write("; include molecules information\n")
 			for idx, molecule_name in enumerate(self.get_molecules_name()):
-				itp_name = "{0}_moleculeinfo_{1:02d}_{2}.itp".format(args.prefix, idx, molecule_name)
+				itp_name = "{0}_{1:02d}_{2}.itp".format(args.prefix, idx, molecule_name)
 				obj_output_top.write("#include \"{0}\"\n".format(itp_name))
 				with open(itp_name, "w") as obj_output_itp:
 					for line in self.get_molecules_info(idx):
