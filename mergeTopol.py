@@ -12,7 +12,7 @@ import sys, os, re, signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 import argparse
-from py_module_basic import basic
+import basic_func
 
 # =============== variables =============== #
 re_include = re.compile(r"#include")
@@ -46,13 +46,13 @@ class TopologyParameter:
 	def __load_data(self, input_file):
 		""" ファイルを読み込むメソッド """
 		# ファイル読み込み
-		basic.check_exist(input_file, 2)
+		basic_func.check_exist(input_file, 2)
 		return self.__load_data_sub(input_file)
 
 
 	def __load_data_sub(self, input_file):
 		""" include 行を読み込むメソッド (再帰的に利用可能) """
-		basic.check_exist(input_file, 2)
+		basic_func.check_exist(input_file, 2)
 
 		lines = []
 		with open(input_file, "r") as obj_input:
@@ -285,7 +285,7 @@ class TopologyParameter:
 	def write(self, output):
 		""" ファイルに書き出すメソッド """
 		if args.flag_overwrite == False:
-			basic.check_overwrite(output)
+			basic_func.check_overwrite(output)
 
 		# 出力
 		with open(output, "w") as obj_output_top:
@@ -428,9 +428,9 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 
 	# ファイルやディレクトリの確認
-	basic.check_exist(args.top, 2)
+	basic_func.check_exist(args.top, 2)
 	for elem in args.library:
-		basic.check_exist(elem, 3)
+		basic_func.check_exist(elem, 3)
 
 	# 追加分子指定の確認
 	if len(args.add_molecule) != len(args.mol):
