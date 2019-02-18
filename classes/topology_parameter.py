@@ -190,6 +190,9 @@ class TopologyParameter:
 		flag_posres = False
 
 		for line_val in lines:
+			if re_empty.search(line_val):
+				continue
+
 			if re_directive.search(line_val):
 				# directive の特定
 				directive = re_directive.search(line_val).group(1)
