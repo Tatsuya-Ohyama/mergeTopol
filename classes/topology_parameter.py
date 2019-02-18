@@ -254,7 +254,7 @@ class TopologyParameter:
 					if flag_posres and re_posres.search(line_val):
 						# posres の場合
 						datas = re_wsp.split(line_val.strip())
-						datas[1:4] = self._posres
+						datas[2:5] = self._posres
 						self._molecules_info[-1].append("{0[0]:>6} {0[1]:>5} {0[2]:>7} {0[3]:>7} {0[4]:>7}\n".format(datas))
 					else:
 						self._molecules_info[-1].append(line_val)
