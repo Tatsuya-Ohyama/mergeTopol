@@ -190,9 +190,6 @@ class TopologyParameter:
 		flag_posres = False
 
 		for line_val in lines:
-			if re_empty.search(line_val):
-				continue
-
 			if re_directive.search(line_val):
 				# directive の特定
 				directive = re_directive.search(line_val).group(1)
@@ -263,6 +260,9 @@ class TopologyParameter:
 				self._system_name.append(line_val)
 
 			elif flag_directive == 5:
+				if re_empty.search(line_val):
+					continue
+
 				if re_comment.search(line_val):
 					self._system_mol.append(line_val)
 				else:
