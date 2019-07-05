@@ -40,6 +40,8 @@ if __name__ == '__main__':
 	if len(args.add_molecule) != len(args.mol):
 		sys.stderr.write("ERROR: the number of files and mol number for adding molecules are different.\n")
 		sys.exit(1)
+	for add_molecule in args.add_molecule:
+		check_exist(add_molecule, 2)
 
 	# top ファイル
 	topology = TopologyParameter(args.top, library = args.library, posres = args.posres, prefix = args.prefix)
