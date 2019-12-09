@@ -327,70 +327,39 @@ class TopologyParameter:
 		@param parameter2: obj_TopologyParameter
 		return: マージしたパラメータ
 		"""
-		directives1 = []
-		directives2 = []
-		parameter_values1 = {}
-		parameter_values2 = {}
-		directive = ""
-
-		# パラメータのラベル付
+		parameter_values = []
 		for line in parameters1:
 			if re_directive.search(line):
-				# directive の場合
-				directive = line
-				directives1.append(line)
-				parameter_values1[directive] = []
+				# directive 行の場合
+				parameter_values.append([line, []])
 			else:
-				parameter_values1[directive].append(line)
+				# パラメータ行の場合
+				parameter_values[-1][1].append(line)
 
+		directives = [v[0] for v in parameter_values]
+
+		directive_idx = 0
 		for line in parameters2:
 			if re_directive.search(line):
-				# directive の場合
-				directive = line
-				directives2.append(line)
-				parameter_values2[directive] = []
-			else:
-				parameter_values2[directive].append(line)
-
-		# directive のマージ
-		for idx, directive in enumerate(directives2):
-			if directive not in directives1:
-				# 追加パラメータの場合
-				pre2 = directives2[idx - 1]
-				next2 = ""
-				if idx + 1 != len(directives2):
-					next2 = directives2[idx + 1]
-
-				idx_pre2 = None
-				idx_next2 = None
-				if pre2 in directives1:
-					idx_pre2 = directives1.index(pre2)
-				if next2 in directives1:
-					idx_next2 = directives1.index(next2)
-
-				if idx_pre2 is None and idx_next2 is None:
-					# directives1 に含まれない場合
-					directives1.append(directive)
-				elif idx_pre2 is None:
-					# 直前の directive が不明の場合、直後の directive の前に挿入する
-					directives1.insert(idx_next2, directive)
-				elif idx_next2 is None:
-					# 直後の directive が不明の場合、直前の directive の後に挿入する
-					directives1.insert(idx_pre2 + 1, directive)
-
-		# value のマージ
-		results = []
-		for directive in directives1:
-			results.append(directive)
-			if directive in parameter_values1.keys():
-				if parameter_values1[directive][-1] in ["", "\n"]:
-					# 末尾に空行がある場合
-					results.extend(parameter_values1[directive][: -1])
+				# directive 行の場合
+				if line in directives:
+					# directive_idx の決定
+					directive_idx = directives.index(line)
 				else:
-					results.extend(parameter_values1[directive])
-			if directive in parameter_values2.keys():
-				results.extend(parameter_values2[directive])
-			results.append("\n")
+					# directive が登録されていない場合
+					directive_idx += 1
+					directives.insert(directive_idx, line)
+					parameter_values.insert(directive_idx, [line, []])
+			else:
+				# パラメータ行の場合
+				if line not in parameter_values[directive_idx][1]:
+					# パラメータが存在しない場合に登録する (重複の除去)
+					parameter_values[directive_idx][1].append(line)
+
+		results = []
+		for parameters in parameter_values:
+			results.append(parameters[0])
+			results += parameters[1]
 
 		return results
 
