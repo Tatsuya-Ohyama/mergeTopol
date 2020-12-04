@@ -37,7 +37,7 @@ def get_filepath(search_path, library, dirname = None):
 	matched_files = []
 	for library_path in library_paths:
 		# ライブラリを検索
-		matched_files.extend([os.path.join(root, file) for root, dirs, files in os.walk(library_path) for file in files if search_path in os.path.join(root, file)])
+		matched_files.extend([os.path.join(root, file) for root, dirs, files in os.walk(library_path, followlinks = True) for file in files if search_path in os.path.join(root, file)])
 		if len(matched_files) != 0:
 			break
 
