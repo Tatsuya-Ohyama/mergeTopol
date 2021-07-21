@@ -1,29 +1,32 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import sys, re, os
+import sys
+import re
+import os
+
 
 
 # =============== variables =============== #
-re_include = re.compile(r"#include")
-re_wsp = re.compile(r"[\s\t]+")
-re_quote = re.compile(r"[\'\"]")
-re_comment = re.compile(r"^[\s\t]*;")
-re_ffcomment = re.compile(r"^\*")
-re_empty = re.compile(r"^[\s\t]*\n$")
-re_directive = re.compile(r"\[ (.+) \]")
-re_posres = re.compile(r"([\s\t]+\d+){2}([\s\t]+\d+(?:\.\d+)?){3}")
+RE_QUOTE = re.compile(r"[\'\"]")
+RE_COMMENT = re.compile(r"^[\s\t]*;")
+RE_DIRECTIVE = re.compile(r"\[ (.+) \]")
+RE_POSRES = re.compile(r"([\s\t]+\d+){2}([\s\t]+\d+(?:\.\d+)?){3}")
 
 
 
 # =============== function =============== #
-def get_filepath(search_path, library, dirname = None):
+def get_filepath(search_path, library, dirname=None):
 	"""
-	ライブラリ内に存在するファイルを検索し、ファイルの内容を返す関数
-	@param search_path: 検索するパス
-	@param library: ライブラリパス
-	@param dirname: 読み込み元 (include 行を持つファイル) のディレクトリパス (Default: None)
-	@return パラメータファイルのパス
+	Function to find files and return their contents
+
+	Args:
+		search_path (str): search dir
+		library (str): library path
+		dirname (str, optional): source dir path (file with include line) (Default: None)
+
+	Returns:
+		str: parameter file path
 	"""
 	search_file = os.path.basename(search_path)
 
@@ -31,22 +34,22 @@ def get_filepath(search_path, library, dirname = None):
 	if dirname == "":
 		dirname = "."
 	if dirname is not None:
-		# 読み込み元のディレクトリパスがある場合、そのパスを先頭に配置
+		# when include source dir path, place the path at the top
 		library_paths.insert(0, dirname)
 
 	matched_files = []
 	for library_path in library_paths:
-		# ライブラリを検索
+		# loop for library path (search library)
 		matched_files.extend([os.path.join(root, file) for root, dirs, files in os.walk(library_path, followlinks = True) for file in files if search_path in os.path.join(root, file)])
 		if len(matched_files) != 0:
 			break
 
 	if len(matched_files) == 0:
-		# ファイルが存在しない場合
+		# when no file
 		sys.stderr.write("ERROR: include topology file not found ({0}).\n".format(search_path))
 		sys.exit(1)
 	if 2 <= len(matched_files):
-		# 複数のファイルが見つかった場合
+		# when multiple files are found
 		sys.stderr.write("{0} is found in:\n".format(search_path))
 		for idx, value in enumerate(matched_files):
 			sys.stderr.write("{0:>3} {1}\n".format(idx, value))
@@ -67,9 +70,13 @@ def get_filepath(search_path, library, dirname = None):
 
 def clean_lines(lines):
 	"""
-	空行を処理する関数
-	@param lines: テキストリスト
-	@return 空行を除去したテキストリスト
+	Function to deal with empty line
+
+	Args:
+		lines (list): line list
+
+	Returns:
+		list
 	"""
 	results = []
 
@@ -80,21 +87,21 @@ def clean_lines(lines):
 	idx_end = 0
 	cnt_result_idx = -1
 
-	for line in lines:
-		if len(line.strip()) == 0:
-			# 空行の場合
+	for line_val in lines:
+		if len(line_val.strip()) == 0:
+			# when empty line
 			if flag_first:
-				# 最初の空行の場合、スキップ
+				# when first empty line, skip
 				idx_first = cnt_result_idx + 1
 			elif flag_empty == False:
-				# 1 つ目の空行を認める
+				# permit one empty line in sequential empty lines
 				flag_empty = True
-				results.append(line)
+				results.append(line_val)
 				cnt_result_idx += 1
 
 		else:
-			if re_comment.search(line):
-				# コメント行の場合
+			if RE_COMMENT.search(line_val):
+				# when comment line
 				if flag_comment == False:
 					idx_end = cnt_result_idx + 1
 					flag_comment = True
@@ -103,7 +110,7 @@ def clean_lines(lines):
 
 			flag_first = False
 			flag_empty = False
-			results.append(line)
+			results.append(line_val)
 			cnt_result_idx += 1
 
 	if flag_comment == False:
@@ -121,23 +128,23 @@ def clean_lines(lines):
 
 # =============== class =============== #
 class TopologyParameter:
-	""" トポロジーデータクラス """
-	def __init__(self, input_file = None, library = [], nmol = 1, posres = [1000, 1000, 1000], prefix = ""):
-		self._nmol = 0			# 分子数
-		self._library = []		# パラメータが格納されているライブラリ
-		self._posres = []		# 拘束エネルギー
-		self._prefix = ""		# 出力ファイル用の接頭辞
+	""" Topology Data class """
+	def __init__(self, input_file=None, library=[], nmol=1, posres=[1000, 1000, 1000], prefix=""):
+		self._n_mol = 0			# number of molecules
+		self._library = []		# library with parameters
+		self._posres = []		# position restraint energy
+		self._prefix = ""		# prefix for output
 
 		self._defaults = []			# defaults directive
-		self._parameters = []		# 力場パラメータを格納
-		self._molecules_name = []	# 各分子の名前を格納
-		self._molecules_info = []	# 各分子の情報を格納 (molecules 情報のインデックスに対応)
-		self._system_name = []		# 系情報を格納
-		self._system_mol = []		# 系内の分子情報を格納
+		self._parameters = []		# force field parameter
+		self._molecule_names = []	# molecule names
+		self._molecules_info = []	# molecule information (molecule index)
+		self._system_name = []		# system information
+		self._system_mol = []		# molecule information in system
 
-		# initiation
+		# init
 		self.set_library(library)
-		self.set_nmol(nmol)
+		self.set_n_mol(nmol)
 		self.set_prefix(prefix)
 		self.set_posres(posres)
 
@@ -145,11 +152,36 @@ class TopologyParameter:
 		self._parse_topology(lines)
 
 
+	@property
+	def defaults(self):
+		return self._defaults
+
+	@property
+	def parameters(self):
+		return self._parameters
+
+	@property
+	def molecule_names(self):
+		return self._molecule_names
+
+	@property
+	def system_name(self):
+		return self._system_name
+
+	@property
+	def system_mol(self):
+		return self._system_mol
+
+
 	def _load_data(self, input_file):
 		"""
-		ファイルを読み込むメソッド
-		@param input_file: 読み込むファイルパス
-		@return: 読み込んだ内容
+		Method to read file
+
+		Args:
+			input_file (str): source file
+
+		Returns:
+			None or contents of file
 		"""
 		if input_file is not None:
 			return self._load_data_sub(input_file)
@@ -159,66 +191,76 @@ class TopologyParameter:
 
 	def _load_data_sub(self, input_file):
 		"""
-		include 行を読み込むメソッド (再帰的に利用可能)
-		@param input_file: 読み込むファイルパス
+		Method to read include line
+
+		Args:
+			input_file (str): source file
+
+		Returns:
+			list: contents
 		"""
 		lines = []
 		with open(input_file, "r") as obj_input:
-			for line in obj_input:
-				if re_include.search(line):
-					# include 行がある場合
+			for line_val in obj_input:
+				if "#include" in line_val:
+					# at include line
 
-					# include ファイルの探索
+					# search for include file
 					dirname = os.path.dirname(input_file)
-					include_file = re_include.sub("", line)
-					include_file = re_quote.sub("", include_file)
+					include_file = line_val.replace("#include", "")
+					include_file = RE_QUOTE.sub("", include_file)
 					include_file = get_filepath(include_file.strip(), self._library, dirname)
 					lines.extend(self._load_data_sub(include_file))
 					lines.append("\n")
 
 				else:
-					# その他の行
-					lines.append(line)
+					# at other lines
+					lines.append(line_val)
 		return lines
 
 
 	def _parse_topology(self, lines):
-		""" パラメータの構文解析をするメソッド """
+		"""
+		Method to parse parameters
+
+		Args:
+			lines (list): contents
+		"""
 		flag_directive = 0
 		molecule_name = ""
 		temporary_info = []
 		flag_posres = False
 
 		for line_val in lines:
-			if re_directive.search(line_val):
-				# directive の特定
-				directive = re_directive.search(line_val).group(1)
+			if RE_DIRECTIVE.search(line_val):
+				# identify directive
+				directive = RE_DIRECTIVE.search(line_val).group(1)
 
 				if directive == "molecules":
-					# 系内の分子情報への切り替わりの場合
+					# at molecule information in system
 					flag_directive = 5
 
 				elif directive in "system":
-					# 系情報への切り替わりの場合
+					# at system information
 					flag_directive = 4
 
 				elif directive == "moleculetype":
-					# 各分子情報への切り替わり、あるいは既に各分子情報の場合
+					# each molecule information
 					flag_directive = 3
 					temporary_info = ["[ moleculetype ]\n"]
 
 				elif directive == "defaults":
-					# defaults の場合
+					# at defaults directive
 					flag_directive = 1
 					self._defaults.append(line_val)
 
 				elif 1 <= flag_directive <= 2:
-					# 力場パラメータの場合
+					# at force field
 					flag_directive = 2
 					self._parameters.append(line_val)
 
 				elif flag_directive == 3:
-					# 分子情報のその他の directive の場合
+					# other directives in system information
 					if directive == "position_restraints":
 						# 原子拘束の場合
 						flag_posres = True
@@ -234,23 +276,23 @@ class TopologyParameter:
 
 			elif flag_directive == 3:
 				if len(temporary_info) != 0:
-					# 新しく登録する moleculetype の場合
-					if  not re_comment.search(line_val):
-						# コメントでない場合
-						molecule_name = re_wsp.split(line_val.strip())[0]
-						self._molecules_name.append(molecule_name)
+					# when moleculetype to newly register
+					if  not RE_COMMENT.search(line_val):
+						# not comment
+						molecule_name = line_val.strip().split()[0]
+						self._molecule_names.append(molecule_name)
 						self._molecules_info.append(temporary_info)
 						self._molecules_info[-1].append(line_val)
 						temporary_info = []
 					else:
-						# directive 直後のコメント (ラベル) の場合
+						# comment (label) after directive
 						temporary_info.append(line_val)
 
 				else:
-					# 既に登録済みの moleculetype の場合
-					if flag_posres and re_posres.search(line_val):
-						# posres の場合
-						datas = re_wsp.split(line_val.strip())
+					# when moleculetype which has already registered
+					if flag_posres and RE_POSRES.search(line_val):
+						# at posres
+						datas = line_val.strip().split()
 						datas[2:5] = self._posres
 						self._molecules_info[-1].append("{0[0]:>6} {0[1]:>5} {0[2]:>7} {0[3]:>7} {0[4]:>7}\n".format(datas))
 					else:
@@ -260,20 +302,20 @@ class TopologyParameter:
 				self._system_name.append(line_val)
 
 			elif flag_directive == 5:
-				if re_empty.search(line_val):
+				if len(line_val.strip()) == 0:
 					continue
 
-				if re_comment.search(line_val):
+				if RE_COMMENT.search(line_val):
 					self._system_mol.append(line_val)
 				else:
-					mol_info = re_wsp.split(line_val.strip())
-					mol_info[1] = int(mol_info[1]) * self._nmol
+					mol_info = line_val.strip().split()
+					mol_info[1] = int(mol_info[1]) * self._n_mol
 					self._system_mol.append("{0[0]:<15} {0[1]:>7}\n".format(mol_info))
 
-		# 先頭の空行を削除
+		# delete head empty line
 		self._defaults = clean_lines(self._defaults)
 		self._parameters = clean_lines(self._parameters)
-		self._molecules_name = clean_lines(self._molecules_name)
+		self._molecule_names = clean_lines(self._molecule_names)
 		for idx, info in enumerate(self._molecules_info):
 			self._molecules_info[idx] = clean_lines(info)
 		self._system_name = clean_lines(self._system_name)
@@ -282,29 +324,41 @@ class TopologyParameter:
 
 	def set_library(self, library):
 		"""
-		パラメータ検索用のライブラリパスリストを設定するメソッド
-		@param library: パラメータ検索用ライブラリパスリスト
-		@return self
+		Method to set library path list for searching parameters
+
+		Args:
+			library (list): library path list for searching parameters
+
+		Returns:
+			self
 		"""
 		self._library = library
 		return self
 
 
-	def set_nmol(self, nmol):
+	def set_n_mol(self, n_mol):
 		"""
-		分子数を設定するメソッド
-		@param mol: 分子数
-		@return self
+		Method to set number of molecules
+
+		Args:
+			nmol (int): number of molecules
+
+		Returns:
+			self
 		"""
-		self._nmol = nmol
+		self._n_mol = n_mol
 		return self
 
 
 	def set_posres(self, posres):
 		"""
-		位置拘束用の拘束エネルギーを設定するメソッド
-		@param posres: 拘束エネルギーリスト [x, y, z]
-		@return self
+		Method to set force energy for position restraint
+
+		Args:
+			posres (list): force energy list
+
+		Returns:
+			self
 		"""
 		self._posres = posres
 		return self
@@ -312,9 +366,13 @@ class TopologyParameter:
 
 	def set_prefix(self, prefix):
 		"""
-		出力用の接頭辞を設定するメソッド
-		@param prefix: 接頭辞
-		@return self
+		Method to set output prefix
+
+		Args:
+			prefix (str): output prefix
+
+		Returns:
+			self
 		"""
 		self._prefix = prefix
 		return self
@@ -322,38 +380,42 @@ class TopologyParameter:
 
 	def _merge_parameters(self, parameters1, parameters2):
 		"""
-		2 つのパラメータをマージするメソッド
-		@param parameter1: obj_TopologyParameter
-		@param parameter2: obj_TopologyParameter
-		return: マージしたパラメータ
+		Method to merge two parameters
+
+		Args:
+			parameters1 (TopologyParameter object): TopologyParameter object
+			parameters2 (TopologyParameter object): TopologyParameter object
+
+		Returns:
+			list: merged parameters
 		"""
 		parameter_values = []
 		for line in parameters1:
-			if re_directive.search(line):
-				# directive 行の場合
+			if RE_DIRECTIVE.search(line):
+				# at directive
 				parameter_values.append([line, []])
 			else:
-				# パラメータ行の場合
+				# at parameter line
 				parameter_values[-1][1].append(line)
 
 		directives = [v[0] for v in parameter_values]
 
 		directive_idx = 0
 		for line in parameters2:
-			if re_directive.search(line):
-				# directive 行の場合
+			if RE_DIRECTIVE.search(line):
+				# at directive
 				if line in directives:
-					# directive_idx の決定
+					# determine directive_idx
 					directive_idx = directives.index(line)
 				else:
-					# directive が登録されていない場合
+					# when directive is not registered
 					directive_idx += 1
 					directives.insert(directive_idx, line)
 					parameter_values.insert(directive_idx, [line, []])
 			else:
-				# パラメータ行の場合
+				# at parameter line
 				if line not in parameter_values[directive_idx][1]:
-					# パラメータが存在しない場合に登録する (重複の除去)
+					# when parameter is not exist, register parameter (remove duplicate)
 					parameter_values[directive_idx][1].append(line)
 
 		results = []
@@ -365,46 +427,53 @@ class TopologyParameter:
 
 
 	def merge_topology(self, obj_molecule):
-		""" 他のトポロジーファイルを取り込むメソッド (追加分子など) """
-		self._parameters = self._merge_parameters(self._parameters, obj_molecule.get_parameters())
-		self._molecules_name.extend(obj_molecule.get_molecules_name())
-		self._molecules_info.extend(obj_molecule.get_molecules_info())
-		for line in obj_molecule.get_system_mol():
-			if not re_comment.search(line):
+		"""
+		Method to uptake other topology file (additional molecule)
+
+		Args:
+			obj_molecule (Molecule object): Molecule object
+
+		Returns:
+			self
+		"""
+		self._parameters = self._merge_parameters(self._parameters, obj_molecule.parameters)
+		self._molecule_names.extend(obj_molecule.molecule_names)
+		self._molecules_info.extend(obj_molecule.get_molecules_infos())
+		for line in obj_molecule.system_mol:
+			if not RE_COMMENT.search(line):
 				self._system_mol.append(line)
+		return self
 
-	def get_defaults(self):
-		""" defaults directive を返すメソッド """
-		return self._defaults
 
-	def get_parameters(self):
-		""" 力場パラメータ情報を返すメソッド """
-		return self._parameters
+	def get_molecules_infos(self, idx = None):
+		"""
+		Method to return molecule informations (each molecule)
 
-	def get_molecules_name(self):
-		""" 分子名リストを返すメソッド """
-		return self._molecules_name
+		Args:
+			idx (int, optional): molecule index (Default: None)
 
-	def get_molecules_info(self, idx = None):
-		""" 分子情報 (各分子) を返すメソッド """
+		Returns:
+			list
+		"""
 		if idx is None:
 			return self._molecules_info
 		elif type(idx) == int:
 			return self._molecules_info[idx]
 		else:
-			sys.stderr.write("ERROR: method error: get_molecules_info() was given something without integer.\n")
+			sys.stderr.write("ERROR: method error: get_molecules_infos() was given something without integer.\n")
 			sys.exit(1)
 
-	def get_system_name(self):
-		""" 系の情報を返すメソッド """
-		return self._system_name
-
-	def get_system_mol(self):
-		""" 系内の分子情報を返すメソッド """
-		return self._system_mol
 
 	def write(self, output):
-		""" ファイルに書き出すメソッド """
+		"""
+		Method to write out file
+
+		Args:
+			output (str): output file
+
+		Returns:
+			self
+		"""
 		# 出力
 		with open(output, "w") as obj_output_top:
 			for line in self._defaults:
@@ -415,17 +484,17 @@ class TopologyParameter:
 			obj_output_top.write("#include \"{0}\"\n".format(parameter_name))
 
 			with open(parameter_name, "w") as obj_output_itp:
-				for line in self.get_parameters():
+				for line in self.parameters:
 					obj_output_itp.write(line)
 			sys.stderr.write("{0} was created.\n".format(parameter_name))
 			obj_output_top.write("\n")
 
 			obj_output_top.write("; include molecules information\n")
-			for idx, molecule_name in enumerate(self.get_molecules_name()):
+			for idx, molecule_name in enumerate(self.molecule_names):
 				itp_name = "{0}_{1:02d}_{2}.itp".format(self._prefix, idx, molecule_name)
 				obj_output_top.write("#include \"{0}\"\n".format(itp_name))
 				with open(itp_name, "w") as obj_output_itp:
-					for line in self.get_molecules_info(idx):
+					for line in self.get_molecules_infos(idx):
 						obj_output_itp.write(line)
 				sys.stderr.write("{0} was created.\n".format(itp_name))
 			obj_output_top.write("\n")
@@ -440,7 +509,4 @@ class TopologyParameter:
 				obj_output_top.write(line)
 			obj_output_top.write("\n")
 
-
-# =============== main =============== #
-# if __name__ == '__main__':
-# 	main()
+		return self
